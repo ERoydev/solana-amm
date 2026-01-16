@@ -1,0 +1,18 @@
+
+action "anchor_project_token_initialized" "svm::deploy_subgraph" {
+    program_id = action.deploy_anchor_project.program_id
+    program_idl = action.deploy_anchor_project.program_idl
+    block_height = 0 // action.deploy_anchor_project.block_height
+    event {
+        name = "TokenInitialized"
+    }
+}
+
+action "anchor_project_tokens_minted" "svm::deploy_subgraph" {
+    program_id = action.deploy_anchor_project.program_id
+    program_idl = action.deploy_anchor_project.program_idl
+    block_height = 0 // action.deploy_anchor_project.block_height
+    event {
+        name = "TokensMinted"
+    }
+}

@@ -1,0 +1,37 @@
+[package]
+name = "anchor_project"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "anchor_project"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version="0.31.1", features = ["init-if-needed"]}
+anchor-spl = "0.31.1"
+sha2 = "0.10.9"
+spl-token = "9.0.0"
+
+[dev-dependencies]
+# mollusk-svm = { version="0.8.1", features=["register-tracing"] }
+mollusk-svm = "0.8.1"
+mollusk-svm-programs-token = "0.8.1"
+solana-address = "2.0.0"
+solana-sdk-ids = "3.1.0"
+solana-account = "3.2.0"
+solana-feature-set = "2.2.5"
+solana-precompiles = "2.2.2"
+solana-program = "3.0.0"
+solana-pubkey = "4.0.0"
+solana-sdk = "3.0.0"
+borsh = "1.6.0"

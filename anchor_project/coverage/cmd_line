@@ -1,0 +1,1 @@
+genhtml --output-directory coverage sbf_trace_dir/0f9ab6f33f5f9418.lcov sbf_trace_dir/branches.lcov --rc branch_coverage=1

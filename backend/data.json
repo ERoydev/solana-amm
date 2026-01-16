@@ -1,0 +1,61 @@
+{
+  "jsonrpc": "2.0",
+  "method": "logsNotification",
+  "params": {
+    "result": {
+      "context": {
+        "slot": 422629177
+      },
+      "value": {
+        "err": null,
+        "logs": [
+          "Program Fx1ezdn2j83AsY8Rd67VBYZmfAMWfZPBcGvJs6A4GyAa invoke [1]",
+          "Program log: Instruction: InitializeMintAccount",
+          "Program 11111111111111111111111111111111 invoke [2]",
+          "Program 11111111111111111111111111111111 success",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+          "Program log: Instruction: InitializeMint2",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 2828 of 592549 compute units",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+          "Program 11111111111111111111111111111111 invoke [2]",
+          "Program 11111111111111111111111111111111 success",
+          "Program data: TUbpfOxczADOnosY8YGJpidftuakIpKwoDwBsVq5Ob6rUkcVrUU7WgQAAABhZGFkBAAAAGRhZGGTXpHuXSGna4fJhUdTxcOFn0nrUioFLW0Nle2Up7+f3qnKHWkAAAAA",
+          "Program Fx1ezdn2j83AsY8Rd67VBYZmfAMWfZPBcGvJs6A4GyAa consumed 21838 of 600000 compute units",
+          "Program Fx1ezdn2j83AsY8Rd67VBYZmfAMWfZPBcGvJs6A4GyAa success",
+          "Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL invoke [1]",
+          "Program log: Create",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+          "Program log: Instruction: GetAccountDataSize",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1622 of 572799 compute units",
+          "Program return: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA pQAAAAAAAAA=",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+          "Program 11111111111111111111111111111111 invoke [2]",
+          "Program 11111111111111111111111111111111 success",
+          "Program log: Initialize the associated token account",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+          "Program log: Instruction: InitializeImmutableOwner",
+          "Program log: Please upgrade to SPL Token 2022 for immutable owner support",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1405 of 566159 compute units",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+          "Program log: Instruction: InitializeAccount3",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 4241 of 562279 compute units",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+          "Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL consumed 20407 of 578162 compute units",
+          "Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL success",
+          "Program Fx1ezdn2j83AsY8Rd67VBYZmfAMWfZPBcGvJs6A4GyAa invoke [1]",
+          "Program log: Instruction: MintTokens",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]",
+          "Program log: Instruction: MintTo",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 4538 of 550120 compute units",
+          "Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success",
+          "Program data: z9SAwq82QBjOnosY8YGJpidftuakIpKwoDwBsVq5Ob6rUkcVrUU7WpNeke5dIadrh8mFR1PFw4WfSetSKgUtbQ2V7ZSnv5/eP5mDva98I13MvFZXULWIPQlPgTrhSymLTTi3TicYsYo=",
+          "Program Fx1ezdn2j83AsY8Rd67VBYZmfAMWfZPBcGvJs6A4GyAa consumed 12856 of 557755 compute units",
+          "Program Fx1ezdn2j83AsY8Rd67VBYZmfAMWfZPBcGvJs6A4GyAa success"
+        ],
+        "signature": "BkPYFoFAbvcJaTccVLzzQeRyDy9vpEnkoDxh57CusBbmXXrWG8DEi5eZnBSpCqQr3DoeU5DFZ24FyXCQvbzNg8d"
+      }
+    },
+    "subscription": 18647886
+  }
+}

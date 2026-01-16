@@ -1,0 +1,26 @@
+[2025-12-08--17-48-48 INFO actix_server::builder] starting 5 workers
+[2025-12-08--17-48-48 INFO actix_server::server] Tokio runtime found; starting in existing Tokio runtime
+[2025-12-08--17-48-48 INFO actix_server::server] starting service: "actix-web-service-127.0.0.1:18488", workers: 5, listening on: 127.0.0.1:18488
+[2025-12-08--17-48-48 INFO parity_ws] Listening for new connections on 127.0.0.1:8900.
+[2025-12-08--17-48-48 INFO parity_ws::io] Accepted a new tcp connection from 127.0.0.1:60975.
+[2025-12-08--17-48-48 INFO actix_web::middleware::logger] 127.0.0.1 "GET /config HTTP/1.1" 200 166 "http://127.0.0.1:18488/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" 0.000492
+[2025-12-08--17-48-49 INFO txtx::svm::deploy_program] [Recovery Instructions] - An ephemeral authority account will be created and funded to write to the buffer account.
+[2025-12-08--17-48-49 INFO txtx::svm::deploy_program] [Recovery Instructions] - Please save the following information in case the deployment fails and the account needs to be recovered:
+[2025-12-08--17-48-49 INFO txtx::svm::deploy_program] [Recovery Instructions] - Ephemeral authority public key: FuL2pE1tf3qFr2rRwvrDJHedx8TY2VifYtrZgmTge3Hk
+[2025-12-08--17-48-49 INFO txtx::svm::deploy_program] [Recovery Instructions] - Ephemeral authority secret key: [55, 26, 148, 4, 164, 62, 108, 217, 170, 171, 40, 212, 218, 162, 210, 3, 54, 65, 33, 162, 211, 140, 224, 27, 198, 255, 190, 30, 32, 176, 52, 225, 221, 107, 86, 120, 145, 115, 124, 198, 36, 107, 185, 131, 22, 59, 0, 98, 198, 97, 196, 132, 173, 117, 165, 1, 152, 193, 234, 231, 117, 43, 32, 11]
+[2025-12-08--17-48-49 INFO txtx::svm::deploy_program] Account Created - Ephemeral authority account created and funded to write to buffer
+[2025-12-08--17-48-49 INFO txtx::svm::deploy_program] [Recovery Instructions] - Creating program buffer account at pubkey 9qbggkW5kybRFxiJDr1cTJ3QirQE1egfdbX2P28QczGo
+[2025-12-08--17-48-49 INFO txtx::svm::deploy_program] Account Created - Program buffer account created
+[2025-12-08--17-48-56 INFO txtx::svm::deploy_program] Buffer Ready - Writing to buffer account is complete
+[2025-12-08--17-48-57 INFO txtx::svm::deploy_program] Program Created - Program 2kBGDQqtAip7ZJ3fDJCyt6AiY9KxhajbCjPRhabEbr8F has been deployed
+[2025-12-08--17-48-58 INFO txtx::svm::deploy_program] Complete - Ephemeral authority account closed and leftover funds returned to payer
+[2025-12-08--17-48-58 INFO txtx::svm::deploy_subgraph] Subgraph Deployed - Subgraph TokensMinted for program 2kBGDQqtAip7ZJ3fDJCyt6AiY9KxhajbCjPRhabEbr8F has been deployed
+[2025-12-08--17-48-58 INFO txtx::svm::deploy_subgraph] Subgraph Deployed - Your subgraph can be reached at "http://127.0.0.1:18488/accounts"
+[2025-12-08--17-48-58 INFO txtx::svm::deploy_subgraph] Subgraph Deployed - Subgraph TokenInitialized for program 2kBGDQqtAip7ZJ3fDJCyt6AiY9KxhajbCjPRhabEbr8F has been deployed
+[2025-12-08--17-48-58 INFO txtx::svm::deploy_subgraph] Subgraph Deployed - Your subgraph can be reached at "http://127.0.0.1:18488/accounts"
+[2025-12-08--17-51-06 INFO actix_server::worker] shutting down idle worker
+[2025-12-08--17-51-06 INFO actix_server::accept] accept thread stopped
+[2025-12-08--17-51-06 INFO actix_server::worker] shutting down idle worker
+[2025-12-08--17-51-06 INFO actix_server::worker] shutting down idle worker
+[2025-12-08--17-51-06 INFO actix_server::worker] shutting down idle worker
+[2025-12-08--17-51-06 INFO actix_server::worker] shutting down idle worker
