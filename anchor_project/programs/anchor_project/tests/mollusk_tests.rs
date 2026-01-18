@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests {
     use anchor_lang::AnchorDeserialize;
-    use borsh::{BorshDeserialize, BorshSerialize};
-    use solana_program::native_token::LAMPORTS_PER_SOL;
     use anchor_project::{constants::*, TokenMetadata};
-    use mollusk_svm::{Mollusk, result::InstructionResult};
+    use borsh::{BorshDeserialize, BorshSerialize};
+    use mollusk_svm::{result::InstructionResult, Mollusk};
     use sha2::{Digest, Sha256};
     use solana_address::Address;
+    use solana_program::native_token::LAMPORTS_PER_SOL;
     use solana_sdk::{
         account::Account,
         instruction::{AccountMeta, Instruction},
@@ -70,7 +70,7 @@ mod tests {
         */
         let mint_account = Account::new(0, 0, &system_program_id); // placeholder
         let token_metadata_account = Account::new(0, 0, &system_program_id); // placeholder
-            
+
         let (mint_authority_pda, _mint_authority_bump) = Address::find_program_address(
             &[b"mint_authority", owner.as_ref(), mint.as_ref()],
             &PROGRAM_ID,
@@ -97,7 +97,7 @@ mod tests {
         let args_bytes = borsh::to_vec(&args).expect("Failed to serialize args"); // Apply serialization
         instruction_data.extend_from_slice(&args_bytes);
 
-        // Order matters 
+        // Order matters
         let accounts = [
             (owner, owner_account),
             (mint, mint_account),
@@ -125,13 +125,16 @@ mod tests {
 
         // Now i use the `InstructionResult` to fetch accounts and stuff
 
-        let metadata_account = ix_result.get_account(&token_metadata_pda).expect("Expected Metadata Account");
+        let metadata_account = ix_result
+            .get_account(&token_metadata_pda)
+            .expect("Expected Metadata Account");
         let metadata_raw_data_binding = metadata_account.data.clone();
         let metadata_data_slice = metadata_raw_data_binding.as_slice();
         let mut cursor = &metadata_data_slice[8..]; // Skip Anchor Account discriminator it is because of this `8 + TokenMetadata::INIT_SPACE` 8 bytes discriminator upfront
 
-        // Metadata Validation checks after transaction 
-        let metadata = TokenMetadata::deserialize(&mut cursor).expect("Failed to deserialize Token Metadata");
+        // Metadata Validation checks after transaction
+        let metadata =
+            TokenMetadata::deserialize(&mut cursor).expect("Failed to deserialize Token Metadata");
         assert_eq!(metadata.name, "TestToken");
         assert_eq!(metadata.symbol, "TTK");
         assert_eq!(metadata.mint.to_bytes(), mint.to_bytes());

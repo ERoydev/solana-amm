@@ -49,18 +49,18 @@ pub struct InitializeLiquidityPool<'info> {
         payer = creator,
         space = 8 + Pool::INIT_SPACE,
         // if i include the creator in the seeds that means multiple users can create Pool with those tokens
-        seeds = [LIQUIDITY_POOL_SEEDS.as_bytes(), token_a_mint.key().as_ref(), token_b_mint.key().as_ref()], 
+        seeds = [LIQUIDITY_POOL_SEEDS.as_bytes(), token_a_mint.key().as_ref(), token_b_mint.key().as_ref()],
         bump
     )]
     pub pool: Account<'info, Pool>,
 
     #[account(
-        init, 
+        init,
         payer = creator,
         mint::decimals = 9,
         mint::authority = pool,
         mint::token_program = token_program,
-        seeds = [POOL_LP_MINT_ACCOUNT_SEED.as_bytes(), pool.key().as_ref()], 
+        seeds = [POOL_LP_MINT_ACCOUNT_SEED.as_bytes(), pool.key().as_ref()],
         bump
     )]
     // This `Pool` will have only one `Mint Account` for LP tokens and on `add_liquidity()` this account will be used again

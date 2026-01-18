@@ -2,11 +2,24 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer};
 
-use crate::{LiquidityPoolError, Pool, TEMP_ESCROW_HOLDER};
+use crate::{LiquidityPoolError, Pool, LIQUIDITY_POOL_SEEDS, TEMP_ESCROW_HOLDER};
 
+/// # Swap Instruction
+///
+/// | Step | What Happens                                      |
+/// |------|---------------------------------------------------|
+/// | 1    | User sends `amount_source` → Temp Escrow          |
+/// | 2    | Fee extracted → Fee Vault                         |
+/// | 3    | Amount after fee → Pool Source Escrow             |
+/// | 4    | `dy` calculated via AMM formula → User            |
+/// | 5    | Reserves updated based on direction (A→B or B→A)  |
+/// | 6    | `last_update` timestamp updated                   |
+///
+/// ## AMM Formula
+/// dy = (y * dx) / (x + dx)
 pub fn _swap(ctx: Context<SwapTokens>, amount_source: u64) -> Result<()> {
-    let mut pool = &mut ctx.accounts.pool;
-    let authority = &ctx.accounts.authority.key();
+    let pool = &mut ctx.accounts.pool;
+    let authority = &ctx.accounts.authority;
 
     let token_program = &ctx.accounts.token_program;
     let program_escrow_temporary_token_account =
@@ -44,8 +57,11 @@ pub fn _swap(ctx: Context<SwapTokens>, amount_source: u64) -> Result<()> {
     )?;
 
     let authority_key = authority.key();
-    let temporary_escrow_seeds: &[&[&[u8]]] =
-        &[&[TEMP_ESCROW_HOLDER.as_bytes(), authority_key.as_ref()]];
+    let temporary_escrow_seeds: &[&[&[u8]]] = &[&[
+        TEMP_ESCROW_HOLDER.as_bytes(),
+        authority_key.as_ref(),
+        &[ctx.bumps.program_escrow_temporary_token_account],
+    ]];
 
     // 2. Send fee to the pool escrow fee holder
     let transfer_fee_from_temp_to_pool_fee_holder_cpi = CpiContext::new(
@@ -53,7 +69,7 @@ pub fn _swap(ctx: Context<SwapTokens>, amount_source: u64) -> Result<()> {
         Transfer {
             from: program_escrow_temporary_token_account.to_account_info(),
             to: fee_vault_token_account.to_account_info(),
-            authority: pool.to_account_info(),
+            authority: program_escrow_temporary_token_account.to_account_info(),
         },
     )
     .with_signer(temporary_escrow_seeds);
@@ -63,11 +79,61 @@ pub fn _swap(ctx: Context<SwapTokens>, amount_source: u64) -> Result<()> {
         dx_fee_result.fee_to_take,
     )?;
 
-    // Send Destination token to user ATA
+    // 3. Transfer remaining source tokens from temp escrow to pool's source escrow
+    let transfer_source_to_pool_cpi = CpiContext::new(
+        token_program.to_account_info(),
+        Transfer {
+            from: program_escrow_temporary_token_account.to_account_info(),
+            to: pool_escrow_source_token_account.to_account_info(),
+            authority: program_escrow_temporary_token_account.to_account_info(),
+        },
+    )
+    .with_signer(temporary_escrow_seeds);
 
-    // Send fee to Pool Fee Token Account
+    transfer(transfer_source_to_pool_cpi, dx_fee_result.amount_after_fee)?;
 
-    // Update States
+    // 4. Transfer destination tokens from pool to user's destination ATA
+    let dy_token_out_u64 = dy_token_out? as u64;
+
+    let pool_signer_seeds: &[&[&[u8]]] = &[&[
+        LIQUIDITY_POOL_SEEDS.as_bytes(),
+        pool.token_a_mint.as_ref(),
+        pool.token_b_mint.as_ref(),
+        &[pool.bump],
+    ]];
+
+    let transfer_destination_to_user_cpi = CpiContext::new(
+        token_program.to_account_info(),
+        Transfer {
+            from: pool_escrow_destination_token_account.to_account_info(),
+            to: user_destination_token_account.to_account_info(),
+            authority: pool.to_account_info(),
+        },
+    )
+    .with_signer(pool_signer_seeds);
+
+    transfer(transfer_destination_to_user_cpi, dy_token_out_u64)?;
+
+    // 5. Update pool reserves based on swap direction
+    let is_a_to_b = ctx.accounts.source_token_mint.key() == pool.token_a_mint;
+
+    if is_a_to_b {
+        pool.reserve_a = pool.reserve_a
+            .checked_add(dx_fee_result.amount_after_fee as u128)
+            .ok_or(LiquidityPoolError::InvalidArithmeticOperation)?;
+        pool.reserve_b = pool.reserve_b
+            .checked_sub(dy_token_out_u64 as u128)
+            .ok_or(LiquidityPoolError::InvalidArithmeticOperation)?;
+    } else {
+        pool.reserve_b = pool.reserve_b
+            .checked_add(dx_fee_result.amount_after_fee as u128)
+            .ok_or(LiquidityPoolError::InvalidArithmeticOperation)?;
+        pool.reserve_a = pool.reserve_a
+            .checked_sub(dy_token_out_u64 as u128)
+            .ok_or(LiquidityPoolError::InvalidArithmeticOperation)?;
+    }
+
+    pool.last_update = Clock::get()?.unix_timestamp;
 
     Ok(())
 }
@@ -156,16 +222,3 @@ impl<'info> SwapTokens<'info> {
         Ok(dy)
     }
 }
-
-/*
-dy = (y * dx * (1 - fee)) / (x + dx * (1 - fee))
-
-x = 100 (Token A reserve)
-y = 10 (Token B reserve)
-dx = 10 (Token A to swap)
-fee = 0
-
-
-dy = (10 * 10) / (100 + 10) = 100 / 110 ≈ 0.909 Token B
-
-*/
