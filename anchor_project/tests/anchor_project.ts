@@ -202,7 +202,6 @@ describe("Liquidity Pool Tests", () => {
       userWallet.publicKey  // The user's wallet (provider)
     );
 
-    // THERE IS SOME LIMITATTION OF ACCOUNTS I REACH AN STACK LIMIT
     const tx = await program.methods
       .addLiquidity(amountA, amountB)
       .accounts({
@@ -329,7 +328,7 @@ describe("Liquidity Pool Tests", () => {
       userWallet.publicKey  // The user's wallet (provider)
     );
 
-    // THERE IS SOME LIMITATTION OF ACCOUNTS I REACH AN STACK LIMIT
+    // Add liquidity tx 
     const tx = await program.methods
       .addLiquidity(amountA, amountB)
       .accounts({
@@ -353,6 +352,77 @@ describe("Liquidity Pool Tests", () => {
       // .instruction();
       .signers([userWallet])
       .rpc({skipPreflight: true});
+
+    // Swap tokens: Swap Token A (USDC) for Token B (SOL)
+    const swapAmountSource = new BN(1).mul(new BN(10).pow(new BN(decimals))); // 1 token A to swap
+
+    // Get pool state before swap for comparison
+    const poolBefore = await program.account.pool.fetch(poolPda);
+    const userTokenABefore = await token.getAccount(provider.connection, user_token_a_ata.address);
+    const userTokenBBefore = await token.getAccount(provider.connection, user_token_b_ata.address);
+
+    console.log("Pool Reserve A before swap:", poolBefore.reserveA.toString());
+    console.log("Pool Reserve B before swap:", poolBefore.reserveB.toString());
+    console.log("User Token A before swap:", userTokenABefore.amount.toString());
+    console.log("User Token B before swap:", userTokenBBefore.amount.toString());
+
+    // Execute swap: A -> B
+    const swapTx = await program.methods
+      .swap(swapAmountSource)
+      .accounts({
+        authority: userWallet.publicKey,
+        pool: poolPda,
+        sourceTokenMint: USDC_token_mint,
+        destinationTokenMint: SOL_token_mint,
+        userSourceTokenAccount: user_token_a_ata.address,
+        userDestinationTokenAccount: user_token_b_ata.address,
+        poolEscrowSourceTokenAccount: escrowTokenAAccountPda,
+        poolEscrowDestinationTokenAccount: escrowTokenBAccountPda,
+        feeVaultTokenAccount: feeVaultTokenAPda,
+        associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([userWallet])
+      .rpc({skipPreflight: true});
+
+    console.log("Swap transaction signature:", swapTx);
+
+    // Get pool state after swap
+    const poolAfter = await program.account.pool.fetch(poolPda);
+    const userTokenAAfter = await token.getAccount(provider.connection, user_token_a_ata.address);
+    const userTokenBAfter = await token.getAccount(provider.connection, user_token_b_ata.address);
+
+    console.log("Pool Reserve A after swap:", poolAfter.reserveA.toString());
+    console.log("Pool Reserve B after swap:", poolAfter.reserveB.toString());
+    console.log("User Token A after swap:", userTokenAAfter.amount.toString());
+    console.log("User Token B after swap:", userTokenBAfter.amount.toString());
+
+    // Assertions
+    // User should have less Token A (spent swap amount)
+    assert.isTrue(
+      BigInt(userTokenAAfter.amount) < BigInt(userTokenABefore.amount),
+      "User Token A should decrease after swap"
+    );
+
+    // User should have more Token B (received from swap)
+    assert.isTrue(
+      BigInt(userTokenBAfter.amount) > BigInt(userTokenBBefore.amount),
+      "User Token B should increase after swap"
+    );
+
+    // Pool Reserve A should increase (received source tokens)
+    assert.isTrue(
+      BigInt(poolAfter.reserveA.toString()) > BigInt(poolBefore.reserveA.toString()),
+      "Pool Reserve A should increase after swap"
+    );
+
+    // Pool Reserve B should decrease (sent destination tokens)
+    assert.isTrue(
+      BigInt(poolAfter.reserveB.toString()) < BigInt(poolBefore.reserveB.toString()),
+      "Pool Reserve B should decrease after swap"
+    );
+  
   });
 });
 
