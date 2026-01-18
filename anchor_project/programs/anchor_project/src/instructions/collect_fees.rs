@@ -5,9 +5,14 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount, Transfer},
 };
 
-use crate::{LpProvider, Pool, LIQUIDITY_POOL_SEEDS};
+use crate::{LiquidityPoolError, LpProvider, Pool, LIQUIDITY_POOL_SEEDS};
 
-// This is like a withdraw function, where user invoke it on demand to collect his fees.
+/// # Collect Fees Instruction
+///
+/// Allows LP providers to collect their proportional share of accumulated fees
+///
+/// ## Formula
+/// user_fees = (user_lp_tokens * total_fees) / total_lp_supply
 pub fn _collect_fees(ctx: Context<CollectFees>) -> Result<()> {
     let provider_total_lp_tokens = ctx.accounts.lp_provider.lp_tokens_owned;
     let total_lp_supply = ctx.accounts.lp_mint.supply;
@@ -18,12 +23,12 @@ pub fn _collect_fees(ctx: Context<CollectFees>) -> Result<()> {
         provider_total_lp_tokens,
         total_lp_supply,
         total_fees_token_a,
-    );
+    )?;
     let token_b_fees_to_collect = CollectFees::get_amount_user_receives(
         provider_total_lp_tokens,
         total_lp_supply,
         total_fees_token_b,
-    );
+    )?;
 
     let token_program = &ctx.accounts.token_program;
     let token_a_mint = &ctx.accounts.token_a_mint.key();
@@ -125,22 +130,28 @@ pub struct CollectFees<'info> {
 }
 
 impl<'info> CollectFees<'info> {
+    /// Calculate proportional fee share for a user
+    /// Formula: user_fees = (user_lp_tokens * total_fees) / total_lp_supply
     pub fn get_amount_user_receives(
         provider_total_lp_tokens: u64,
         total_lp_supply: u64,
         total_fees: u64,
-    ) -> u64 {
+    ) -> Result<u64> {
         if total_lp_supply == 0 {
-            return 0;
+            return Ok(0);
         }
-        let user_share = provider_total_lp_tokens as f64 / total_lp_supply as f64;
-        (user_share * total_fees as f64) as u64
+        
+        // Use u128 to prevent overflow during multiplication
+        let numerator = (provider_total_lp_tokens as u128)
+            .checked_mul(total_fees as u128)
+            .ok_or(LiquidityPoolError::InvalidArithmeticOperation)?;
+        
+        let result = numerator
+            .checked_div(total_lp_supply as u128)
+            .ok_or(LiquidityPoolError::InvalidArithmeticOperation)?;
+        
+        result
+            .try_into()
+            .map_err(|_| LiquidityPoolError::InvalidArithmeticOperation.into())
     }
 }
-/*
-    Formula:
-    LP minted = min(
-        deposit_token_a * total_lp_supply / reserve_token_a,
-        deposit_token_b * total_lp_supply / reserve_token_b
-    )
-*/

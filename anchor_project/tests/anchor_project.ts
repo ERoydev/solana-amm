@@ -424,6 +424,342 @@ describe("Liquidity Pool Tests", () => {
     );
   
   });
+
+  it("Remove liquidity, should be successful", async () => {
+    let [poolPda, poolBump] = getPoolPda(USDC_token_mint, SOL_token_mint, program.programId);
+    let [lpMintPda, lpMintBump] = getLpMintPda(poolPda, program.programId);
+    let [escrowTokenAAccountPda, escrowTokenABump] = getEscrowTokenAAccountPda(poolPda, program.programId);
+    let [escrowTokenBAccountPda, escrowTokenBBump] = getEscrowTokenBAccountPda(poolPda, program.programId);
+    
+    let [feeVaultTokenAPda, feeVaultTokenABump] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fee-vault-token-a"),
+        poolPda.toBuffer(),
+      ],
+      program.programId
+    );
+
+    let [feeVaultTokenBPda, feeVaultTokenBBump] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fee-vault-token-b"),
+        poolPda.toBuffer(),
+      ],
+      program.programId
+    );
+
+    // Initialize the Liquidity Pool
+    await program.methods
+      .initializeLiquidityPool()
+      .accounts({
+        creator: userWallet.publicKey,
+        // @ts-ignore
+        pool: poolPda,
+        lpMint: lpMintPda,
+        escrowTokenAAccount: escrowTokenAAccountPda,
+        escrowTokenBAccount: escrowTokenBAccountPda,
+        feeVaultTokenA: feeVaultTokenAPda,
+        feeVaultTokenB: feeVaultTokenBPda,
+        tokenAMint: USDC_token_mint,
+        tokenBMint: SOL_token_mint,  
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([userWallet])
+      .rpc({skipPreflight: true});
+
+    // Add liquidity first
+    const decimals = 9;
+    const humanAmountA = 10;
+    const humanAmountB = 20;
+    const amountA = new BN(humanAmountA).mul(new BN(10).pow(new BN(decimals)));
+    const amountB = new BN(humanAmountB).mul(new BN(10).pow(new BN(decimals)));
+
+    let [lpProviderPda, lpProviderBump] = getLpProviderPda(poolPda, userWallet.publicKey, program.programId);
+
+    const lpUserReceiveAta = token.getAssociatedTokenAddressSync(
+      lpMintPda,
+      userWallet.publicKey
+    );
+
+    await program.methods
+      .addLiquidity(amountA, amountB)
+      .accounts({
+        provider: userWallet.publicKey,
+        pool: poolPda,
+        tokenAMint: USDC_token_mint,
+        tokenBMint: SOL_token_mint,
+        userSendTokenAAccountAta: user_token_a_ata.address,
+        userSendTokenBAccountAta: user_token_b_ata.address,
+        escrowTokenAAccount: escrowTokenAAccountPda,
+        escrowTokenBAccount: escrowTokenBAccountPda,
+        lpProvider: lpProviderPda,
+        lpUserReceiveAta: lpUserReceiveAta,
+        feeVaultTokenA: feeVaultTokenAPda,
+        feeVaultTokenB: feeVaultTokenBPda,
+        lpMint: lpMintPda,
+        associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([userWallet])
+      .rpc({skipPreflight: true});
+
+    // Get state before removing liquidity
+    const poolBefore = await program.account.pool.fetch(poolPda);
+    const lpProviderBefore = await program.account.lpProvider.fetch(lpProviderPda);
+    const userTokenABefore = await token.getAccount(provider.connection, user_token_a_ata.address);
+    const userTokenBBefore = await token.getAccount(provider.connection, user_token_b_ata.address);
+    const lpTokenBalanceBefore = await token.getAccount(provider.connection, lpUserReceiveAta);
+
+    console.log("Pool Reserve A before remove:", poolBefore.reserveA.toString());
+    console.log("Pool Reserve B before remove:", poolBefore.reserveB.toString());
+    console.log("Pool Total LP Supply before remove:", poolBefore.totalLpSupply.toString());
+    console.log("LP Tokens owned before remove:", lpProviderBefore.lpTokensOwned.toString());
+    console.log("User LP token balance before remove:", lpTokenBalanceBefore.amount.toString());
+
+    // Remove half of the liquidity
+    const lpAmountToBurn = new BN(lpProviderBefore.lpTokensOwned.toString()).div(new BN(2));
+
+    console.log("LP tokens to burn:", lpAmountToBurn.toString());
+
+    // Execute remove liquidity
+    const removeTx = await program.methods
+      .removeLiquidity(lpAmountToBurn)
+      .accounts({
+        provider: userWallet.publicKey,
+        pool: poolPda,
+        tokenAMint: USDC_token_mint,
+        tokenBMint: SOL_token_mint,
+        lpMint: lpMintPda,
+        lpUserTokenAccount: lpUserReceiveAta,
+        userReceiveTokenAAta: user_token_a_ata.address,
+        userReceiveTokenBAta: user_token_b_ata.address,
+        escrowTokenAAccount: escrowTokenAAccountPda,
+        escrowTokenBAccount: escrowTokenBAccountPda,
+        lpProvider: lpProviderPda,
+        associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([userWallet])
+      .rpc({skipPreflight: true});
+
+    console.log("Remove liquidity transaction signature:", removeTx);
+
+    // Get state after removing liquidity
+    const poolAfter = await program.account.pool.fetch(poolPda);
+    const lpProviderAfter = await program.account.lpProvider.fetch(lpProviderPda);
+    const userTokenAAfter = await token.getAccount(provider.connection, user_token_a_ata.address);
+    const userTokenBAfter = await token.getAccount(provider.connection, user_token_b_ata.address);
+    const lpTokenBalanceAfter = await token.getAccount(provider.connection, lpUserReceiveAta);
+
+    console.log("Pool Reserve A after remove:", poolAfter.reserveA.toString());
+    console.log("Pool Reserve B after remove:", poolAfter.reserveB.toString());
+    console.log("Pool Total LP Supply after remove:", poolAfter.totalLpSupply.toString());
+    console.log("LP Tokens owned after remove:", lpProviderAfter.lpTokensOwned.toString());
+    console.log("User LP token balance after remove:", lpTokenBalanceAfter.amount.toString());
+
+    // Assertions
+    // Pool reserves should decrease
+    assert.isTrue(
+      BigInt(poolAfter.reserveA.toString()) < BigInt(poolBefore.reserveA.toString()),
+      "Pool Reserve A should decrease after removing liquidity"
+    );
+    assert.isTrue(
+      BigInt(poolAfter.reserveB.toString()) < BigInt(poolBefore.reserveB.toString()),
+      "Pool Reserve B should decrease after removing liquidity"
+    );
+
+    // Pool total LP supply should decrease
+    assert.isTrue(
+      BigInt(poolAfter.totalLpSupply.toString()) < BigInt(poolBefore.totalLpSupply.toString()),
+      "Total LP supply should decrease"
+    );
+
+    // LP provider should own less LP tokens
+    assert.isTrue(
+      BigInt(lpProviderAfter.lpTokensOwned.toString()) < BigInt(lpProviderBefore.lpTokensOwned.toString()),
+      "LP provider should own less LP tokens"
+    );
+
+    // User should have received tokens back
+    assert.isTrue(
+      BigInt(userTokenAAfter.amount) > BigInt(userTokenABefore.amount),
+      "User should receive Token A back"
+    );
+    assert.isTrue(
+      BigInt(userTokenBAfter.amount) > BigInt(userTokenBBefore.amount),
+      "User should receive Token B back"
+    );
+
+    // LP token balance should decrease
+    assert.isTrue(
+      BigInt(lpTokenBalanceAfter.amount) < BigInt(lpTokenBalanceBefore.amount),
+      "LP token balance should decrease"
+    );
+  });
+
+  it("Collect fees, should be successful", async () => {
+    let [poolPda, poolBump] = getPoolPda(USDC_token_mint, SOL_token_mint, program.programId);
+    let [lpMintPda, lpMintBump] = getLpMintPda(poolPda, program.programId);
+    let [escrowTokenAAccountPda, escrowTokenABump] = getEscrowTokenAAccountPda(poolPda, program.programId);
+    let [escrowTokenBAccountPda, escrowTokenBBump] = getEscrowTokenBAccountPda(poolPda, program.programId);
+    
+    let [feeVaultTokenAPda, feeVaultTokenABump] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fee-vault-token-a"),
+        poolPda.toBuffer(),
+      ],
+      program.programId
+    );
+
+    let [feeVaultTokenBPda, feeVaultTokenBBump] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("fee-vault-token-b"),
+        poolPda.toBuffer(),
+      ],
+      program.programId
+    );
+
+    // Initialize the Liquidity Pool
+    await program.methods
+      .initializeLiquidityPool()
+      .accounts({
+        creator: userWallet.publicKey,
+        // @ts-ignore
+        pool: poolPda,
+        lpMint: lpMintPda,
+        escrowTokenAAccount: escrowTokenAAccountPda,
+        escrowTokenBAccount: escrowTokenBAccountPda,
+        feeVaultTokenA: feeVaultTokenAPda,
+        feeVaultTokenB: feeVaultTokenBPda,
+        tokenAMint: USDC_token_mint,
+        tokenBMint: SOL_token_mint,  
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([userWallet])
+      .rpc({skipPreflight: true});
+
+    // Add liquidity
+    const decimals = 9;
+    const humanAmountA = 10;
+    const humanAmountB = 20;
+    const amountA = new BN(humanAmountA).mul(new BN(10).pow(new BN(decimals)));
+    const amountB = new BN(humanAmountB).mul(new BN(10).pow(new BN(decimals)));
+
+    let [lpProviderPda, lpProviderBump] = getLpProviderPda(poolPda, userWallet.publicKey, program.programId);
+
+    const lpUserReceiveAta = token.getAssociatedTokenAddressSync(
+      lpMintPda,
+      userWallet.publicKey
+    );
+
+    await program.methods
+      .addLiquidity(amountA, amountB)
+      .accounts({
+        provider: userWallet.publicKey,
+        pool: poolPda,
+        tokenAMint: USDC_token_mint,
+        tokenBMint: SOL_token_mint,
+        userSendTokenAAccountAta: user_token_a_ata.address,
+        userSendTokenBAccountAta: user_token_b_ata.address,
+        escrowTokenAAccount: escrowTokenAAccountPda,
+        escrowTokenBAccount: escrowTokenBAccountPda,
+        lpProvider: lpProviderPda,
+        lpUserReceiveAta: lpUserReceiveAta,
+        feeVaultTokenA: feeVaultTokenAPda,
+        feeVaultTokenB: feeVaultTokenBPda,
+        lpMint: lpMintPda,
+        associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([userWallet])
+      .rpc({skipPreflight: true});
+
+    // Check fee vaults have fees (from add_liquidity)
+    const feeVaultABefore = await token.getAccount(provider.connection, feeVaultTokenAPda);
+    const feeVaultBBefore = await token.getAccount(provider.connection, feeVaultTokenBPda);
+
+    console.log("Fee Vault A before collect:", feeVaultABefore.amount.toString());
+    console.log("Fee Vault B before collect:", feeVaultBBefore.amount.toString());
+
+    assert(BigInt(feeVaultABefore.amount) > 0n, "Fee vault A should have fees");
+    assert(BigInt(feeVaultBBefore.amount) > 0n, "Fee vault B should have fees");
+
+    // Get user token balances before collecting fees
+    const userTokenABefore = await token.getAccount(provider.connection, user_token_a_ata.address);
+    const userTokenBBefore = await token.getAccount(provider.connection, user_token_b_ata.address);
+
+    console.log("User Token A before collect:", userTokenABefore.amount.toString());
+    console.log("User Token B before collect:", userTokenBBefore.amount.toString());
+
+    // Collect fees
+    const collectTx = await program.methods
+      .collectFees()
+      .accounts({
+        provider: userWallet.publicKey,
+        lpMint: lpMintPda,
+        pool: poolPda,
+        lpProvider: lpProviderPda,
+        tokenAMint: USDC_token_mint,
+        tokenBMint: SOL_token_mint,
+        userReceiveTokenAAccountAta: user_token_a_ata.address,
+        userReceiveTokenBAccountAta: user_token_b_ata.address,
+        feeVaultTokenA: feeVaultTokenAPda,
+        feeVaultTokenB: feeVaultTokenBPda,
+        associatedTokenProgram: token.ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: token.TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([userWallet])
+      .rpc({skipPreflight: true});
+
+    console.log("Collect fees transaction signature:", collectTx);
+
+    // Get balances after collecting fees
+    const feeVaultAAfter = await token.getAccount(provider.connection, feeVaultTokenAPda);
+    const feeVaultBAfter = await token.getAccount(provider.connection, feeVaultTokenBPda);
+    const userTokenAAfter = await token.getAccount(provider.connection, user_token_a_ata.address);
+    const userTokenBAfter = await token.getAccount(provider.connection, user_token_b_ata.address);
+
+    console.log("Fee Vault A after collect:", feeVaultAAfter.amount.toString());
+    console.log("Fee Vault B after collect:", feeVaultBAfter.amount.toString());
+    console.log("User Token A after collect:", userTokenAAfter.amount.toString());
+    console.log("User Token B after collect:", userTokenBAfter.amount.toString());
+
+    // Assertions
+    // Fee vaults should decrease
+    assert.isTrue(
+      BigInt(feeVaultAAfter.amount) < BigInt(feeVaultABefore.amount),
+      "Fee vault A should decrease after collecting"
+    );
+    assert.isTrue(
+      BigInt(feeVaultBAfter.amount) < BigInt(feeVaultBBefore.amount),
+      "Fee vault B should decrease after collecting"
+    );
+
+    // User should receive fees
+    assert.isTrue(
+      BigInt(userTokenAAfter.amount) > BigInt(userTokenABefore.amount),
+      "User should receive Token A fees"
+    );
+    assert.isTrue(
+      BigInt(userTokenBAfter.amount) > BigInt(userTokenBBefore.amount),
+      "User should receive Token B fees"
+    );
+
+    // Since user is the only LP provider, they should get all fees
+    const feesCollectedA = BigInt(userTokenAAfter.amount) - BigInt(userTokenABefore.amount);
+    const feesCollectedB = BigInt(userTokenBAfter.amount) - BigInt(userTokenBBefore.amount);
+
+    console.log("Fees collected A:", feesCollectedA.toString());
+    console.log("Fees collected B:", feesCollectedB.toString());
+
+    assert.isTrue(feesCollectedA > 0n, "Should collect Token A fees");
+    assert.isTrue(feesCollectedB > 0n, "Should collect Token B fees");
+  });
 });
 
 describe("Token Minting Tests", () => {

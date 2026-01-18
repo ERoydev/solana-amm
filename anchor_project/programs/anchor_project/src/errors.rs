@@ -10,4 +10,6 @@ pub enum LiquidityPoolError {
     InvalidStateUpdateOperation,
     #[msg("Invalid arithmetic operation")]
     InvalidArithmeticOperation,
+    #[msg("Insufficient LP tokens to burn")]
+    InsufficientLpTokens,
 }

@@ -31,8 +31,8 @@ pub mod anchor_project {
     }
 
     // Burn LP tokens, withdraw proportional share
-    pub fn remove_liquidity(ctx: Context<RemoveLiquidity>) -> Result<()> {
-        _remove_liquidity(ctx)
+    pub fn remove_liquidity(ctx: Context<RemoveLiquidity>, lp_amount_to_burn: u64) -> Result<()> {
+        _remove_liquidity(ctx, lp_amount_to_burn)
     }
 
     // Swap Token A <-> Token B using constant-product-formula

@@ -148,6 +148,10 @@ pub fn _add_liquidity(
             .try_into()
             .map_err(|_| LiquidityPoolError::InvalidStateUpdateOperation)?,
     );
+    pool.total_lp_supply = pool
+        .total_lp_supply
+        .checked_add(lp_to_mint)
+        .ok_or(LiquidityPoolError::InvalidArithmeticOperation)?;
 
     msg!("Pool: {}", pool.reserve_a);
     lp_provider.lp_tokens_owned = lp_to_mint;
